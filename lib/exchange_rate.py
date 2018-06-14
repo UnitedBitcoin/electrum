@@ -164,6 +164,8 @@ def get_exchanges_and_currencies():
             d[name] = exchange.get_currencies()
         except:
             continue
+    if not os.path.exists(os.path.dirname(__file__)):
+        os.makedirs(os.path.dirname(__file__))
     with open(path, 'w') as f:
         f.write(json.dumps(d, indent=4, sort_keys=True))
     return d
