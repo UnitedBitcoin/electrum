@@ -27,18 +27,18 @@
 
 # Note: The deserialization code originally comes from ABE.
 
-from lib.util import print_error, profiler
+from .util import print_error, profiler
 
-from lib import bitcoin,script
-from lib.bitcoin import *
-from lib.script import CScript,OP_CALL,OP_SPEND,OP_CREATE,OP_DEPOSIT_TO_CONTRACT,hash160
+from . import bitcoin,script
+from .bitcoin import *
+from .script import CScript,OP_CALL,OP_SPEND,OP_CREATE,OP_DEPOSIT_TO_CONTRACT,hash160
 import struct
 from decimal import Decimal
 import hashlib
 #
 # Workalike python implementation of Bitcoin's CDataStream class.
 #
-from lib.keystore import xpubkey_to_address, xpubkey_to_pubkey
+from .keystore import xpubkey_to_address, xpubkey_to_pubkey
 import binascii
 
 NO_SIGNATURE = 'ff'
@@ -426,13 +426,13 @@ def get_address_from_output_script(_bytes,index = -1,txid = ''):
         return TYPE_CONTRACT_ADDRESS,decoded[3][1].decode()
     TO_DEPOSIT_TO_CONTRACT = [-1, -1, -1, -1, -1, -1,-1, opcodes.OP_DEPOSIT_TO_CONTRACT]
     if match_decoded(decoded, TO_DEPOSIT_TO_CONTRACT):
-        return TYPE_CONTRACT_DEPOSIT_ADDRESS,(decoded[3][1].decode(),struct.unpack_from("I",decoded[2][1],0)[0])
+        return TYPE_CONTRACT_DEPOSIT_ADDRESS,(decoded[3][1].decode(),int(''.join(map(hex, decoded[2][1])).replace('0x', ''), 16))
     TO_UPGRADE = [-1, -1, -1, -1, -1, -1, -1, opcodes.OP_UPGRADE]
     if match_decoded(decoded, TO_UPGRADE):
         return TYPE_CONTRACT_ADDRESS,decoded[3][1].decode()
     TO_SPENT = [-1, -1, opcodes.OP_SPEND]
     if match_decoded(decoded, TO_SPENT):
-        return TYPE_CONTRACT_WITHDRAW_ADDRESS,(decoded[1][1].decode(),struct.unpack_from("I",decoded[0][1],0)[0])
+        return TYPE_CONTRACT_WITHDRAW_ADDRESS,(decoded[1][1].decode(),int(''.join(map(hex, decoded[0][1])).replace('0x', ''), 16))
 
     return TYPE_SCRIPT, bh2u(_bytes)
 
