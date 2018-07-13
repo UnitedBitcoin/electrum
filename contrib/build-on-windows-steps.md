@@ -7,6 +7,7 @@ build-on-windows-steps
 * git clone https://github.com/ecdsa/pyinstaller.git
 * git fetch origin fix_2952:fix_2952 && git checkout fix_2952
 * cd to pyinstaller directory
+* run `python3 setup.py install` to install pyinstaller manually
 * cd to projects' parent directory 
 * git clone https://github.com/UnitedBitcoin/electrum-icons
 * git clone https://github.com/UnitedBitcoin/electrum-locale
@@ -17,7 +18,7 @@ build-on-windows-steps
 * cp -r electrum-locale/locale electrum/lib/
 * cp electrum-icons/icons_rc.py electrum/gui/qt/
 * cd to the electrum directory
-* pip install ./contrib/requirements.txt
+* pip install -r ./contrib/requirements.txt
 * pip install trezor btchip-python
 * python setup.py install
 * cp contrib/build-wine/* .
