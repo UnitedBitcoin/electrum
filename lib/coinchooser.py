@@ -72,12 +72,16 @@ Bucket = namedtuple('Bucket', ['desc', 'size', 'value', 'coins', 'min_height'])
 
 def strip_unneeded(bkts, sufficient_funds, exception=None):
     '''Remove buckets that are unnecessary in achieving the spend amount'''
+    if len(bkts)>0:
+        back_bkt = bkts.pop(0)
+
     bkts = sorted(bkts, key = lambda bkt: bkt.value)
-    for i in range(len(bkts)):
-        if exception and bkts[i].desc == exception:
-            del bkts[i]
-            bkts.append(exception)
-            break
+    bkts.insert(0,back_bkt)
+    # for i in range(len(bkts)):
+    #     if exception and bkts[i].desc == exception:
+    #         del bkts[i]
+    #         bkts.append(exception)
+    #         break
     for i in range(len(bkts)):
         if not sufficient_funds(bkts[i + 1:]):
             return bkts[i:]
@@ -192,7 +196,7 @@ class CoinChooserBase(PrintError):
         def sufficient_funds(buckets):
             '''Given a list of buckets, return True if it has enough
             value to pay for the transaction'''
-            total_input = sum(bucket.value for bucket in buckets) + withdraw_from_balance
+            total_input = sum(bucket.value for bucket in buckets) + int(withdraw_from_balance)
             total_size = sum(bucket.size for bucket in buckets) + base_size
             return total_input >= spent_amount + fee_estimator(total_size)
 
@@ -400,9 +404,10 @@ class CoinChooserUB(CoinChooserBase):
             if len(selected) == 0:
                 raise Exception('choose_buckets - sender address has no utxo')
         for bucket in buckets:
-            selected.append(bucket)
-            if sufficient_funds(selected):
-                return strip_unneeded(selected, sufficient_funds, sender)
+            if bucket.desc != sender:
+                selected.append(bucket)
+                if sufficient_funds(selected):
+                    return selected#strip_unneeded(selected, sufficient_funds, sender)
         else:
             raise NotEnoughFunds()
 

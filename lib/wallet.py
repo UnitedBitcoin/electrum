@@ -928,7 +928,7 @@ class Abstract_Wallet(PrintError):
             tx = coin_chooser.make_tx(inputs, outputs, change_addrs[:max_change],
                                       fee_estimator, self.dust_threshold(),sender,withdraw_from_balance)
         else:
-            sendable = sum(map(lambda x:x['value'], inputs))+withdraw_from_balance
+            sendable = sum(map(lambda x:x['value'], inputs))+int(withdraw_from_balance)
             _type, data, value,scri = outputs[i_max]
             outputs[i_max] = (_type, data, 0,"")
             tx = Transaction.from_io(inputs, outputs[:])
@@ -939,7 +939,7 @@ class Abstract_Wallet(PrintError):
             tx = Transaction.from_io(inputs, outputs[:])
 
         # Sort the inputs and outputs deterministically
-        tx.BIP_LI01_sort()
+        #tx.BIP_LI01_sort()
         # Timelock tx to current height.
         tx.locktime = self.get_local_height()
         run_hook('make_unsigned_transaction', self, tx)

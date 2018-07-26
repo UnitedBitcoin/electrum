@@ -16,8 +16,9 @@ from electrum.bitcoin import is_contract_address, is_address, b58_address_to_has
 from electrum.util import bh2u, print_error
 import os
 
-float_validator = QRegExpValidator(QRegExp('^(-?\d+)(\.\d+)?$'))
+float_validator = QRegExpValidator(QRegExp('^(-?\d+)(\.\d{8})?$'))
 int_validator = QIntValidator(0, 10 ** 9 - 1)
+name_validator = QRegExpValidator(QRegExp('^.{10}$'))
 
 
 class ContractInfoLayout(QVBoxLayout):
@@ -35,6 +36,7 @@ class ContractInfoLayout(QVBoxLayout):
 
         self.addWidget(QLabel(_("Contract Name:")))
         self.name_e = ButtonsLineEdit()
+        self.name_e.setValidator(name_validator)
         self.addWidget(self.name_e)
 
         self.addWidget(QLabel(_("Address:")))
@@ -150,11 +152,11 @@ class ContractFuncLayout(QGridLayout):
         self.gas_limit_e = ButtonsLineEdit()
         self.gas_limit_e.setValidator(int_validator)
         self.gas_limit_e.setText('100')
-        gas_price_lb = QLabel(_('gas price: '))
+        gas_price_lb = QLabel(_('gas price(UBTC): '))
         self.gas_price_e = ButtonsLineEdit()
         self.gas_price_e.setValidator(float_validator)
         self.gas_price_e.setText('0.0000001')
-        amount_lb = QLabel(_('amount: '))
+        amount_lb = QLabel(_('amount(UBTC): '))
         self.amount_e = ButtonsLineEdit()
         self.amount_e.setValidator(float_validator)
         optional_layout.addWidget(gas_limit_lb)
@@ -197,6 +199,11 @@ class ContractFuncLayout(QGridLayout):
         self.call_button.setHidden(True)
         self.testtransfer_button.setHidden(True)
         self.transferto_button.setHidden(True)
+        def hide_sendto():
+            self.sendto_button.setHidden(True)
+            self.transferto_button.setHidden(True)
+
+        self.args_e.textChanged.connect(hide_sendto)
 
         def show_call():
             self.optional_widget.setEnabled(False)
@@ -318,6 +325,9 @@ class ContractFuncLayout(QGridLayout):
             return
 
         gas_limit, gas_price, amount = self.parse_values()
+        if gas_limit <10 or gas_price <10 or gas_limit>=1000000000:
+            self.dialog.show_message(str("gas limit or gas price is illegal!"))
+            return
         self.dialog.do_transferto( args, gas_limit, gas_price, amount, sender)
 
 
@@ -363,7 +373,7 @@ class ContractCreateLayout(QVBoxLayout):
         params_layout.addWidget(QLabel(_("Bytecode:")))
         self.bytecode_e = QLineEdit()
         self.bytecode_e.setFixedWidth(400)
-        self.bytecode_e.setText(self.path)
+        #self.bytecode_e.setText(self.path)
         params_layout.addWidget(self.bytecode_e)
 
 
@@ -378,7 +388,7 @@ class ContractCreateLayout(QVBoxLayout):
         self.gas_limit_e = ButtonsLineEdit()
         self.gas_limit_e.setValidator(int_validator)
         self.gas_limit_e.setText('2500')
-        gas_price_lb = QLabel(_('gas price:'))
+        gas_price_lb = QLabel(_('gas price(UBTC):'))
         self.gas_price_e = ButtonsLineEdit()
         self.gas_price_e.setValidator(float_validator)
         self.gas_price_e.setText('0.00000010')
@@ -406,7 +416,7 @@ class ContractCreateLayout(QVBoxLayout):
 
     def changePath(self):
         open = QFileDialog()
-        self.path = open.getOpenFileName()
+        self.path = open.getOpenFileName(filter="GPC FILE (*.gpc)")
         # self.path = open.getExistingDirectory()
         self.bytecode_e.setText(self.path[0])
 
@@ -421,6 +431,7 @@ class ContractCreateLayout(QVBoxLayout):
     def parse_values(self):
         def parse_edit_value(edit, times=10 ** 8):
             try:
+
                 return int(float(edit.text()) * times)
             except ValueError:
                 return 0
@@ -449,6 +460,9 @@ class ContractCreateLayout(QVBoxLayout):
             self.dialog.show_message(str(e))
             return
         gas_limit, gas_price = self.parse_values()
+        if gas_limit <10 or gas_price <10 or gas_limit>=1000000000:
+            self.dialog.show_message(str("gas limit or gas price is illegal!"))
+            return
         bytecode_file_path = self.bytecode_e.text()
         try:
             with open(bytecode_file_path, 'rb') as f:
