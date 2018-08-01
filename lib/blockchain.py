@@ -339,10 +339,10 @@ class Blockchain(util.PrintError):
             tNbits.append(last_header)
             tempBits.add(last_header["bits"])
             if is_pos and height <= util.ForkData.third_fork_height:
-                return util.ub_default_diffculty(is_pos,True)
+                return util.ub_default_diffculty(is_pos)
             if last_header is None :
                 if is_pos:
-                    return util.ub_default_diffculty(is_pos,True)
+                    return util.ub_default_diffculty(is_pos)
                 else:
                     return self.get_third_fork_pow_difficult()
             if len(tempBits)>1:
