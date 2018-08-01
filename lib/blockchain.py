@@ -433,7 +433,7 @@ class Blockchain(util.PrintError):
 #修改为新的难度调整算法
 
             if is_pos and index - util.ForkData.third_fork_max_index <9:
-                return util.ub_default_diffculty(is_pos,True)
+                return util.ub_default_diffculty(is_pos)
             elif not is_pos and index - util.ForkData.third_fork_max_index <9:
                 return self.get_third_fork_pow_difficult()
 
