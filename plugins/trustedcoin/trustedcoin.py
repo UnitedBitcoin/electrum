@@ -213,10 +213,10 @@ class Wallet_2fa(Multisig_Wallet):
         if xf and sendable >= xf:
             billing_address = self.billing_info['billing_address']
             sendable -= xf
-            outputs = [(_type, addr, sendable),
-                       (TYPE_ADDRESS, billing_address, xf)]
+            outputs = [(_type, addr, sendable,""),
+                       (TYPE_ADDRESS, billing_address, xf,"")]
         else:
-            outputs = [(_type, addr, sendable)]
+            outputs = [(_type, addr, sendable,"")]
         dummy_tx = Transaction.from_io(inputs, outputs)
         if fee is None:
             fee = self.estimate_fee(config, dummy_tx.estimated_size())
@@ -255,7 +255,7 @@ class Wallet_2fa(Multisig_Wallet):
         fee = self.extra_fee(config) if not is_sweep else 0
         if fee:
             address = self.billing_info['billing_address']
-            fee_output = (TYPE_ADDRESS, address, fee)
+            fee_output = (TYPE_ADDRESS, address, fee,"")
             try:
                 tx = mk_tx(outputs + [fee_output])
             except NotEnoughFunds:

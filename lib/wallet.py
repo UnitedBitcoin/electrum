@@ -1077,7 +1077,7 @@ class Abstract_Wallet(PrintError):
             i = outputs.index(o)
             otype, address, value,scrip = o
             if value - delta >= self.dust_threshold():
-                outputs[i] = otype, address, value - delta
+                outputs[i] = otype, address, value - delta,""
                 delta = 0
                 break
             else:
@@ -1104,7 +1104,7 @@ class Abstract_Wallet(PrintError):
             return
         self.add_input_info(item)
         inputs = [item]
-        outputs = [(TYPE_ADDRESS, address, value - fee)]
+        outputs = [(TYPE_ADDRESS, address, value - fee,"")]
         locktime = self.get_local_height()
         return Transaction.from_io(inputs, outputs, locktime=locktime)
 
