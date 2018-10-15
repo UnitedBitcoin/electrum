@@ -225,6 +225,8 @@ class ForkData:
     MINING_TYPE_POW = 0x02000000
     MINING_TYPE_POS = 0x01000000
 
+    fourth_fork_height = 572000
+
 
 
 
@@ -305,6 +307,7 @@ def ub_default_diffculty(is_pos):
         return 0x00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff
     else:
         return 0x000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff
+        #return 0x0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 
 
 def android_ext_dir():
