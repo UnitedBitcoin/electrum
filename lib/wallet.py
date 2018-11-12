@@ -205,6 +205,25 @@ class Abstract_Wallet(PrintError):
         self.contacts = Contacts(self.storage)
         self.smart_contracts = SmartContracts(self.storage)
 
+        self.update_wallet_data_by_version()
+
+    def update_wallet_data_by_version(self):
+        cache_version = self.storage.get('cache_version')
+        if cache_version is None:
+            for address,data in self.smart_contracts.items():
+                self.smart_contracts[address] = (data[0],None)
+            self.smart_contracts.save()
+
+            self.storage.put('cache_version',self.electrum_version)
+        else:
+            if cache_version =="3.3.3":
+                for address, data in self.smart_contracts.items():
+                    self.smart_contracts[address] = (data[0], None)
+                self.smart_contracts.save()
+                self.storage.put('cache_version', self.electrum_version)
+
+
+
 
     def diagnostic_name(self):
         return self.basename()
