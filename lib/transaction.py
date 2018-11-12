@@ -667,6 +667,8 @@ class Transaction:
         return chr(255) + struct.pack("<Q", len(s)) + s
 
     def Contract_cal_address_from_data(self,caller_address,index,trx_id):
+        if trx_id is None:
+            return "CONCREATENEWCONTRACT"
         datas = bytes()
         tttt = bytes.fromhex(caller_address)
         caller_address = tttt.decode("utf-8")

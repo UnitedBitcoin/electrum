@@ -282,6 +282,10 @@ class ContractFuncLayout(QGridLayout):
         for change in result["balanceChanges"]:
             if not change["is_contract"] and change["is_add"]:
                 withdraw_infos[change["address"]] = change["amount"] * 1.0 /  (10 ** 8)
+        for one_interface in self.contract["interface"]:
+            if one_interface["name"] == abi:
+                if "is_offline" in one_interface:
+                    return
         self.withdraw_infos =withdraw_infos
         self.withdraw_froms =withdraw_from_infos
         self.optional_widget.setEnabled(True)
