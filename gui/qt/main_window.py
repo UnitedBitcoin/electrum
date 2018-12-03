@@ -3216,7 +3216,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         d = ContractEditDialog(self, contract)
         d.show()
 
-    def contract_func_dialog(self, address,dialog ):
+    def contract_func_dialog(self, dialog, address, contractType ):
         name, interface = self.smart_contracts[address]
         if interface is None:
             contract_info = self.network.synchronous_get(('blockchain.contract.getabi', [address]))
@@ -3237,7 +3237,8 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         contract = {
             'name': name,
             'interface': interface,
-            'address': address
+            'address': address,
+            'contractType': contractType
         }
         d = ContractFuncDialog(self, contract)
         d.show()

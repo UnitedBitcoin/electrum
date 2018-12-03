@@ -17,7 +17,7 @@ class SmartContractList(MyTreeWidget,MessageBoxMixin):
     filter_columns = [0, 1]
 
     def __init__(self, parent):
-        MyTreeWidget.__init__(self, parent, self.create_menu, [_('Name'), _('Address')], 1, [0])
+        MyTreeWidget.__init__(self, parent, self.create_menu, [_('Name'), _('Address'), _('Type')], 1, [0])
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.header().setContextMenuPolicy(Qt.CustomContextMenu)
         self.header().customContextMenuRequested.connect(self.create_menu_title)
@@ -26,7 +26,8 @@ class SmartContractList(MyTreeWidget,MessageBoxMixin):
 
     def on_doubleclick(self, item, column):
         address = item.data(0, Qt.UserRole)
-        self.parent.contract_func_dialog(address,self)
+        contractType = item.data(1, Qt.UserRole)
+        self.parent.contract_func_dialog(self, address, contractType)
 
     def create_menu_title(self, position):
         menu = QMenu()
@@ -46,7 +47,7 @@ class SmartContractList(MyTreeWidget,MessageBoxMixin):
             menu.addAction(_("Create contract"), lambda: self.parent.contract_create_dialog())
         elif not multi_select:
             item = selected[0]
-            name = item.text(0)
+            # name = item.text(0)
             address = item.text(1)
             column = self.currentColumn()
             column_title = self.headerItem().text(column)
@@ -58,14 +59,33 @@ class SmartContractList(MyTreeWidget,MessageBoxMixin):
         run_hook('create_smart_contract_menu', menu, selected)
         menu.exec_(self.viewport().mapToGlobal(position))
 
+    def isTokenContract(self, abis):
+        tokenAbis = ['init_token', 'transfer', 'balanceOf', 'transferFrom']
+        matchedAbiCount = 0
+        for abi in abis:
+            try:
+                if tokenAbis.index(abi['name']) >= 0:
+                    matchedAbiCount += 1
+            except:
+                continue
+        if matchedAbiCount == len(tokenAbis):
+            return True
+        else:
+            return False
+
     def on_update(self):
         item = self.currentItem()
         current_key = item.data(0, Qt.UserRole) if item else None
         self.clear()
         for address in sorted(self.parent.smart_contracts.keys()):
             name, abi = self.parent.smart_contracts[address]
-            item = QTreeWidgetItem([name, address])
+            if self.isTokenContract(abi):
+                contractType = 'Token'
+            else:
+                contractType = 'Common'
+            item = QTreeWidgetItem([name, address, contractType])
             item.setData(0, Qt.UserRole, address)
+            item.setData(1, Qt.UserRole, contractType)
             self.addTopLevelItem(item)
             if address == current_key:
                 self.setCurrentItem(item)
