@@ -202,6 +202,7 @@ class ContractFuncLayout(QGridLayout):
         self.sender_combo = QComboBox()
         self.sender_combo.setMinimumWidth(400)
         self.sender_combo.addItems(self.senders)
+        self.sender_combo.currentIndexChanged.connect(self.update_balance)
         buttons.addWidget(self.sender_combo)
         buttons.addStretch(1)
         self.call_button = EnterButton(_("Estimate"), self.do_call)
@@ -219,13 +220,21 @@ class ContractFuncLayout(QGridLayout):
         if contract["contractType"] == 'Token':
             if len(self.senders) > 0:
                 sender = self.senders[self.sender_combo.currentIndex()]
-            abi = 'precision'
-            args = sender
-            result = self.dialog.do_call(abi, args, sender, False)
-            if (result is None or "gasCount" not in result.keys()):
-                return
-            self.precision = int(result['result'])
+                abi = 'precision'
+                args = sender
+                result = self.dialog.do_call(abi, args, sender, False)
+                if (result is None or "gasCount" not in result.keys()):
+                    return
+                self.precision = int(result['result'])
+            self.update_balance()
 
+        self.update()
+
+    def update_balance(self):
+        if self.contract['contractType'] != "Token":
+            return
+        if len(self.senders) > 0:
+            sender = self.senders[self.sender_combo.currentIndex()]
             abi = 'balanceOf'
             args = sender
             result = self.dialog.do_call(abi, args, sender, False)
@@ -233,8 +242,6 @@ class ContractFuncLayout(QGridLayout):
                 return
             else:
                 self.balance_e.setText(str(float(result['result']) / self.precision))
-
-        self.update()
 
     def update(self):
         self.sendto_button.setHidden(True)
