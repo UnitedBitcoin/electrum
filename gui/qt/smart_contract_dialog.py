@@ -108,46 +108,70 @@ class ContractFuncLayout(QGridLayout):
         self.withdraw_infos=None
         self.withdraw_froms=None
 
+        lineNumber = 1
+        if contract["contractType"] == 'Token':
+            # Balance
+            balance_lb = QLabel(_("Balance:"))
+            self.balance_e = ButtonsLineEdit()
+            self.balance_e.setText('0')
+            self.balance_e.setReadOnly(True)
+            self.addWidget(balance_lb, lineNumber, 0)
+            self.addWidget(self.balance_e, lineNumber, 1, 1, -1)
+            lineNumber += 1
+
+
+        # Contract address
         address_lb = QLabel(_("Address:"))
-        self.address_e = ButtonsLineEdit()
-        qr_show = lambda: dialog.parent().show_qrcode(str(self.address_e.text()), 'Address', parent=dialog)
-        self.address_e.addButton(":icons/qrcode.png", qr_show, _("Show as QR code"))
+        self.address_e = QLineEdit()
         self.address_e.setText(self.contract['address'])
         self.address_e.setReadOnly(True)
-        self.addWidget(address_lb, 1, 0)
-        self.addWidget(self.address_e, 1, 1, 1, -1)
+        self.addWidget(address_lb, lineNumber, 0)
+        self.addWidget(self.address_e, lineNumber, 1, 1, -1)
+        lineNumber += 1
 
-        abi_lb = QLabel(_('Function:'))
-        self.abi_combo = QComboBox()
+        if contract["contractType"] == 'Token':
+            abi_lb = QLabel(_('Transfer To:'))
+            self.toAddr_e = ButtonsLineEdit()
+            qr_show = lambda: dialog.parent().show_qrcode(str(self.address_e.text()), 'Address', parent=dialog)
+            self.toAddr_e.addButton(":icons/qrcode.png", qr_show, _("Show as QR code"))
+            self.addWidget(abi_lb, lineNumber, 0)
+            self.addWidget(self.toAddr_e, lineNumber, 1, 1, -1)
+        else:
+            abi_lb = QLabel(_('Function:'))
+            self.abi_combo = QComboBox()
+            self.abi_signatures = [(-1, "(transferTo)"), ]
+            for index, abi in enumerate(contract.get('interface', [])):
+                if abi.get("name") in ["init","on_deposit","on_upgrade","on_destroy"]:
+                    continue
+                self.abi_signatures.append((index, abi.get("name")))
+            self.abi_combo.addItems([s[1] for s in self.abi_signatures])
+            self.abi_combo.setFixedWidth(self.address_e.width())
+            if len(self.senders) > 0:
+                self.abi_combo.setCurrentIndex(0)
+            self.abi_combo.currentIndexChanged.connect(self.update)
+            self.addWidget(abi_lb, lineNumber, 0)
+            self.addWidget(self.abi_combo, lineNumber, 1, 1, -1)
+        lineNumber += 1
 
-        self.abi_signatures = [(-1, "(transferTo)"), ]
-        for index, abi in enumerate(contract.get('interface', [])):
-            if abi.get("name") in ["init","on_deposit","on_upgrade","on_destroy"]:
-                continue
-
-            self.abi_signatures.append((index, abi.get("name")))
-
-        self.abi_combo.addItems([s[1] for s in self.abi_signatures])
-        self.abi_combo.setFixedWidth(self.address_e.width())
-        if len(self.senders) > 0:
-            self.abi_combo.setCurrentIndex(0)
-        self.addWidget(abi_lb, 2, 0)
-        self.addWidget(self.abi_combo, 2, 1, 1, -1)
-        self.abi_combo.currentIndexChanged.connect(self.update)
-
-        args_lb = QLabel(_('Parameters:'))
-        self.args_e = QLineEdit()
-        self.addWidget(args_lb, 3, 0)
-        self.addWidget(self.args_e, 3, 1, 1, -1)
+        if contract["contractType"] == 'Token':
+            # Amount
+            amount_lb = QLabel(_('Amount:'))
+            self.args_e = QLineEdit()
+            self.addWidget(amount_lb, lineNumber, 0)
+            self.addWidget(self.args_e, lineNumber, 1, 1, -1)
+        else:
+            args_lb = QLabel(_('Parameters:'))
+            self.args_e = QLineEdit()
+            self.addWidget(args_lb, lineNumber, 0)
+            self.addWidget(self.args_e, lineNumber, 1, 1, -1)
+        lineNumber += 1
 
         self.optional_lb = QLabel(_('Optional:'))
-        self.addWidget(self.optional_lb, 4, 0)
+        self.addWidget(self.optional_lb, lineNumber, 0)
         self.optional_widget = QWidget()
-
         optional_layout = QHBoxLayout()
         optional_layout.setContentsMargins(0, 0, 0, 0)
         optional_layout.setSpacing(0)
-
         gas_limit_lb = QLabel(_('gas limit: '))
         self.gas_limit_e = ButtonsLineEdit()
         self.gas_limit_e.setValidator(int_validator)
@@ -169,15 +193,16 @@ class ContractFuncLayout(QGridLayout):
         optional_layout.addWidget(self.amount_e)
         optional_layout.addStretch(0)
         self.optional_widget.setLayout(optional_layout)
-        self.addWidget(self.optional_widget, 4, 1, 1, -1)
+        self.addWidget(self.optional_widget, lineNumber, 1, 1, -1)
+        lineNumber += 1
 
         sender_lb = QLabel(_('Sender:'))
-        self.addWidget(sender_lb, 5, 0)
-
+        self.addWidget(sender_lb, lineNumber, 0)
         buttons = QHBoxLayout()
         self.sender_combo = QComboBox()
         self.sender_combo.setMinimumWidth(400)
         self.sender_combo.addItems(self.senders)
+        self.sender_combo.currentIndexChanged.connect(self.update_balance)
         buttons.addWidget(self.sender_combo)
         buttons.addStretch(1)
         self.call_button = EnterButton(_("Estimate"), self.do_call)
@@ -189,12 +214,36 @@ class ContractFuncLayout(QGridLayout):
         buttons.addWidget(self.testtransfer_button)
         buttons.addWidget(self.transferto_button)
         buttons.addStretch()
-        self.addLayout(buttons, 5, 1, 1, -1)
+        self.addLayout(buttons, lineNumber, 1, 1, -1)
+        lineNumber += 1
+
+        if contract["contractType"] == 'Token':
+            if len(self.senders) > 0:
+                sender = self.senders[self.sender_combo.currentIndex()]
+                abi = 'precision'
+                args = sender
+                result = self.dialog.do_call(abi, args, sender, False)
+                if (result is None or "gasCount" not in result.keys()):
+                    return
+                self.precision = int(result['result'])
+            self.update_balance()
 
         self.update()
 
+    def update_balance(self):
+        if self.contract['contractType'] != "Token":
+            return
+        if len(self.senders) > 0:
+            sender = self.senders[self.sender_combo.currentIndex()]
+            abi = 'balanceOf'
+            args = sender
+            result = self.dialog.do_call(abi, args, sender, False)
+            if (result is None or "gasCount" not in result.keys()):
+                return
+            else:
+                self.balance_e.setText(str(float(result['result']) / self.precision))
+
     def update(self):
-        abi_index = self.abi_signatures[self.abi_combo.currentIndex()][0]
         self.sendto_button.setHidden(True)
         self.call_button.setHidden(True)
         self.testtransfer_button.setHidden(True)
@@ -233,10 +282,14 @@ class ContractFuncLayout(QGridLayout):
             self.testtransfer_button.setHidden(False)
             self.transferto_button.setHidden(False)
 
+        if self.contract['contractType'] == 'Token':
+            abi_index = -2
+        else:
+            abi_index = self.abi_signatures[self.abi_combo.currentIndex()][0]
         if abi_index == -1:
             show_transfertest()
         else:
-            abi = self.contract['interface'][abi_index]
+            # abi = self.contract['interface'][abi_index]
             show_call()
 
     def parse_values(self):
@@ -250,12 +303,17 @@ class ContractFuncLayout(QGridLayout):
             self.amount_e)
 
     def parse_args(self):
-        args = self.args_e.text()
-        abi_index = self.abi_signatures[self.abi_combo.currentIndex()][0]
-        if abi_index == -1:
-            abi = ""
+        if self.contract['contractType'] == 'Token':
+            abi = 'transfer'
+            amount = float(self.args_e.text()) * self.precision
+            args = self.toAddr_e.text() + "," + str(amount)
         else:
-            abi = self.contract['interface'][abi_index]["name"]
+            abi_index = self.abi_signatures[self.abi_combo.currentIndex()][0]
+            if abi_index == -1:
+                abi = ""
+            else:
+                abi = self.contract['interface'][abi_index]["name"]
+            args = self.args_e.text()
         if len(self.senders) > 0:
             sender = self.senders[self.sender_combo.currentIndex()]
         else:
@@ -271,7 +329,7 @@ class ContractFuncLayout(QGridLayout):
             self.dialog.show_message(str(e))
             return
         result = self.dialog.do_call(abi, args, sender)
-        if(result is None or "gasCount" not in result.keys()):
+        if(result is None or not isinstance(result, dict) or "gasCount" not in result.keys()):
             return
         self.gas_limit_e.setText(str(int(result["gasCount"])+10))
         withdraw_from_infos = {}
@@ -343,12 +401,19 @@ class ContractFuncDialog(QDialog, MessageBoxMixin):
         self.setMinimumSize(700, 200)
         self.main_window = parent
         run_hook('contract_func_dialog', self)
+        # if contract['contractType'] == 'Token':
+        #     layout = ContractTokenLayout(self, contract)
+        # else:
         layout = ContractFuncLayout(self, contract)
         self.setLayout(layout)
 
-    def do_call(self, abi, args, sender):
+    def do_call(self, abi, args, sender, showDialog=True):
         address = self.contract['address']
-        return self.parent().call_smart_contract(address, abi, args, sender, self)
+        ret = self.parent().call_smart_contract(address, abi, args, sender)
+        if showDialog:
+            self.show_message(str(ret))
+        return ret
+
 
 
     def do_transfer_test(self, amount, args, sender):
