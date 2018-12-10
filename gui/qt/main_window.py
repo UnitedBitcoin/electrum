@@ -3127,17 +3127,13 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
 
         return result
 
-    def call_smart_contract(self, address, abi, args, sender, dialog):
+    def call_smart_contract(self, address, abi, args, sender):
         try:
             result = self.network.synchronous_get(('blockchain.contract.invoke_contract_offline', [sender,address, abi,args]), timeout=10)
         except BaseException as e:
-            dialog.show_message(str(e))
-            return
+            return str(e)
         if not result:
-            dialog.show_message('testing failed! Please check call arguments.'+json.dumps(result),None,"testing failed")
-            return
-
-        dialog.show_message(result["result"],None,"testing return")
+            return 'testing failed! Please check call arguments.'+json.dumps(result),None,"testing failed"
         return result
 
     def sendto_smart_contract(self, address, abi, args, gas_limit, gas_price, sender, dialog, withdraw_infos=None, withdraw_froms=None):
