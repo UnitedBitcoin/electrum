@@ -3093,8 +3093,14 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
             self.smart_contract_list.update()
             return False
         contract_info = self.network.synchronous_get(('blockchain.contract.getabi', [address]))
-        if("apis" in contract_info.keys()):
-            self.smart_contracts[address] = (name, contract_info["apis"])
+        if "apis" in contract_info.keys():
+            api_contract_data = contract_info["apis"]
+            if "offline_apis" in contract_info.keys():
+                for one_data in contract_info["offline_apis"]:
+                    one_data["is_offline"] = True
+                    api_contract_data.append(one_data)
+
+            self.smart_contracts[address] = (name, api_contract_data)
         else:
             self.smart_contracts[address] = (name, None)
         self.smart_contract_list.update()
@@ -3215,8 +3221,15 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         if interface is None:
             contract_info = self.network.synchronous_get(('blockchain.contract.getabi', [address]))
             if "apis" in contract_info.keys():
-                self.smart_contracts[address] = (name, contract_info["apis"])
-                interface = contract_info["apis"]
+                api_contract_data = contract_info["apis"]
+                if "offline_apis" in contract_info.keys():
+                    for one_data in contract_info["offline_apis"]:
+                        one_data["is_offline"] = True
+                        api_contract_data.append(one_data)
+
+                self.smart_contracts[address] = (name, api_contract_data)
+                interface = api_contract_data
+
             else:
                 dialog.show_message("smart contract abi is not found,please wait!")
                 return
