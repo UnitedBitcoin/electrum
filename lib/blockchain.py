@@ -150,6 +150,8 @@ class Blockchain(util.PrintError):
             raise BaseException("prev hash mismatch: %s vs %s" % (prev_hash, header.get('prev_block_hash')))
         if bitcoin.NetworkConstants.TESTNET:
             return
+        if header["block_height"] == util.ForkData.superblockV1number:
+            return
         bits = self.target_to_bits(target)
         if bits != header.get('bits'):
             raise BaseException("bits mismatch: %s vs %s" % (bits, header.get('bits')))
@@ -177,8 +179,9 @@ class Blockchain(util.PrintError):
             for i in range(num):
                 raw_header = data[i*80:(i+1) * 80]
                 header = deserialize_header(raw_header, util.ub_start_height_of_index(index) + i)
-                if not (util.ub_start_height_of_index(index) + i >=util.ForkData.superblockstartnumber and util.ub_start_height_of_index(index) + i<=util.ForkData.superblockendnumber):
+                if (not (util.ub_start_height_of_index(index) + i >=util.ForkData.superblockstartnumber and util.ub_start_height_of_index(index) + i<=util.ForkData.superblockendnumber)) and (util.ub_start_height_of_index(index) + i!=util.ForkData.superblockV1number):
                     self.verify_header(header, prev_hash, target)
+
                 prev_hash = hash_header(header)
 
     def path(self):
