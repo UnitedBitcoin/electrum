@@ -226,6 +226,7 @@ class ForkData:
     MINING_TYPE_POS = 0x01000000
 
     fourth_fork_height = 572000
+    superblockV1number = 813500
 
 
 
